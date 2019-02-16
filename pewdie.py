@@ -389,11 +389,11 @@ def winner_ranked_condorcet(channels,country_data_to_use):
 
     for country_obj in country_data_to_use:
         this_country = country_obj['country']
-        # print "___ ___ ___ ___ ___ ___"
-        # print this_country
+        print "___ ___ ___ ___ ___ ___"
+        print this_country
 
-        channel_winners = [{'name': c['name'], 'winner_in': 0} for c in channels_copied]
-        channel_winners.append({'name': 'NO WINNER', 'winner_in': 0})
+        channel_winners = [{'name': c['name'], 'wins_against': 0} for c in channels_copied]
+        channel_winners.append({'name': 'NO WINNER', 'wins_against': 0})
 
         for ci in xrange(total_channels):
             c1 = channels[ci]
@@ -422,18 +422,21 @@ def winner_ranked_condorcet(channels,country_data_to_use):
                     winner = {'name': 'NO WINNER'}
 
                 channel_winner_obj = filter(lambda c: c['name'] == winner['name'], channel_winners)[0]
-                channel_winner_obj['winner_in'] += 1
+                channel_winner_obj['wins_against'] += 1
 
-                # if this_country == 'India':
-                #     print str(c1['name']) + ": " + str(c1_votes)
-                #     print str(c2['name']) + ": " + str(c2_votes)
-                #     print "Winner: " + str(winner['name'])
-                #     print "\n"
 
-        # print channel_winners
-        ultimate_winner = max(filter(lambda c: c['name'] != 'NO WINNER', channel_winners), key=lambda w:w['winner_in'])
-        # print "----------------\nUltimate winner: " + str(ultimate_winner['name'])
-        results[ultimate_winner['name']] += 1
+                # print str(c1['name']) + ": " + str(c1_votes)
+                # print str(c2['name']) + ": " + str(c2_votes)
+                # print "Winner: " + str(winner['name'])
+                # print "\n"
+
+        print channel_winners
+        probable_ultimate_winner = max(filter(lambda c: c['name'] != 'NO WINNER', channel_winners), key=lambda w:w['wins_against'])
+        if(probable_ultimate_winner['wins_against'] == (total_channels - 1)):
+            print "----------------\nUltimate winner: " + str(probable_ultimate_winner['name'])
+            results[probable_ultimate_winner['name']] += 1
+        else:
+            print "----------------\nNO WINNER:"
 
     print "\nSeats distribution for " + str(len(country_data_to_use)) + " seats (countries):"
     print sorted(results.items(), key=itemgetter(1), reverse = True)
@@ -673,6 +676,6 @@ votes_distribution_fptp(channels, useful_country_data)
 # winner_fptp(channels, useful_country_data)
 votes_distribution_ranked_voting(channels, useful_country_data)
 # printChannelVotes(channels)
-winner_irv(channels,useful_country_data)
-winner_ranked_borda_count(channels, useful_country_data)
+# winner_irv(channels,useful_country_data)
+# winner_ranked_borda_count(channels, useful_country_data)
 winner_ranked_condorcet(channels,useful_country_data)
