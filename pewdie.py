@@ -61,17 +61,32 @@ def votes_distribution_fptp(channels,country_data_to_use):
 
     denominator_all_subs = sum(c['subs'] for c in channels)
 
+    # print sum(map(lambda country: ((country['useful_count'] * country['useful_languages']['EN']) / 100), country_data_to_use))
+    # print sum(c['subs'] for c in filter(lambda channel: channel['language'] == 'EN', channels))*pow(10,-6)
+    # print "\n"
+    # print sum(map(lambda country: ((country['useful_count'] * country['useful_languages']['HI']) / 100), country_data_to_use))
+    # print sum(c['subs'] for c in filter(lambda channel: channel['language'] == 'HI', channels))*pow(10,-6)
+    # print "\n"
+    # print sum(map(lambda country: ((country['useful_count'] * country['useful_languages']['PR']) / 100), country_data_to_use))
+    # print sum(c['subs'] for c in filter(lambda channel: channel['language'] == 'PR', channels))*pow(10,-6)
+    # print "\n"
+
     for channel_obj in channels:
         channel_language = channel_obj['language']
         channels_with_channel_language = filter(lambda c: c['language'] == channel_language, channels)
         channels_with_channel_language_total_subs = sum(c['subs'] for c in channels_with_channel_language)
+        # total_population_with_channel_language = sum(map(lambda country: ((country['useful_count'] * country['useful_languages'][channel_language]) / 100), country_data_to_use))
+        # print total_population_with_channel_language
         for country_obj in country_data_to_use:
-            population_with_channel_language = country_obj['useful_count'] * country_obj['useful_languages'][channel_language] / 100
+            population_with_channel_language = country_obj['useful_languages'][channel_language]
+            # print country_obj['country']
+            # print population_with_channel_language
             # EITHER
             #   Uniform split language population
             # this_channels_slice = population_with_channel_language / len(channels_with_channel_language)
             # OR
             #   Split according to subs proportion
+            # this_channels_slice = round(channel_obj['subs'] * (population_with_channel_language/total_population_with_channel_language) * pow(10,-6),2)
             this_channels_slice = population_with_channel_language * (channel_obj['subs']/channels_with_channel_language_total_subs)
             channel_subs_in_country = this_channels_slice
 
@@ -95,8 +110,8 @@ def winner_fptp(all_channels,all_countries):
 
     for country_obj in all_countries:
         this_country = country_obj['country']
-        print "________________________"
-        print this_country
+        # print "________________________"
+        # print this_country
         max_votes_in_this_country = 0
         winner = {}
         equal_votes_competitors = []
@@ -117,7 +132,7 @@ def winner_fptp(all_channels,all_countries):
         country_obj['voting_population'] = round(total_votes_in_country,2)
         if(len(equal_votes_competitors)):
             winner = random.choice(equal_votes_competitors)
-            print "Winner " + str(this_country) + ": " + str(winner['name'])
+            # print "Winner " + str(this_country) + ": " + str(winner['name'])
             results[winner['name']] += 1
 
     print "\nSeats distribution for " + str(len(all_countries)) + " seats (countries):"
@@ -389,8 +404,8 @@ def winner_ranked_condorcet(channels,country_data_to_use):
 
     for country_obj in country_data_to_use:
         this_country = country_obj['country']
-        print "___ ___ ___ ___ ___ ___"
-        print this_country
+        # print "___ ___ ___ ___ ___ ___"
+        # print this_country
 
         channel_winners = [{'name': c['name'], 'wins_against': 0} for c in channels_copied]
         channel_winners.append({'name': 'NO WINNER', 'wins_against': 0})
@@ -430,13 +445,14 @@ def winner_ranked_condorcet(channels,country_data_to_use):
                 # print "Winner: " + str(winner['name'])
                 # print "\n"
 
-        print channel_winners
+        # print channel_winners
         probable_ultimate_winner = max(filter(lambda c: c['name'] != 'NO WINNER', channel_winners), key=lambda w:w['wins_against'])
         if(probable_ultimate_winner['wins_against'] == (total_channels - 1)):
-            print "----------------\nUltimate winner: " + str(probable_ultimate_winner['name'])
+            # print "----------------\nUltimate winner: " + str(probable_ultimate_winner['name'])
             results[probable_ultimate_winner['name']] += 1
         else:
-            print "----------------\nNO WINNER:"
+            # print "----------------\nNO WINNER:"
+            pass
 
     print "\nSeats distribution for " + str(len(country_data_to_use)) + " seats (countries):"
     print sorted(results.items(), key=itemgetter(1), reverse = True)
@@ -546,39 +562,70 @@ def winner_approval_rating(all_channels,all_countries):
     print "\n"
 
 
-def shapeCountryPopulationDataAccordingToLanguages(countries):
-    # Use language %ages in country data to get exact NUMBER of people per language.
-    # Add all these NUMBERS. These are our useful population (since only they speak the languages we are concerned with)
-    # Find and remember %age share of each language from the previous total. This would be useful after scaling down ahead.
-    # SCALE this total number down to match sum of all subs.
-    # Use earlier %age remembered data to find exact NUMBER of people per language in this scaled down number.
+# def shapeCountryPopulationDataAccordingToLanguages_Attempt1(countries):
+#     # Use language %ages in country data to get exact NUMBER of people per language.
+#     # Add all these NUMBERS. These are our useful population (since only they speak the languages we are concerned with)
+#     # Find and remember %age share of each language from the previous total. This would be useful after scaling down ahead.
+#     # SCALE this total number down to match sum of all subs.
+#     # Use earlier %age remembered data to find exact NUMBER of people per language in this scaled down number.
+#
+#     for country_obj in countries:
+#         country_languages = country_obj['languages'].keys()
+#         subset_of_language_data = {}
+#         total_size_of_subset = 0
+#         for language in country_languages:
+#             this_language_population = round((country_obj['count'] * (country_obj['languages'][language]) / 100),2)
+#             subset_of_language_data[language] = this_language_population
+#             total_size_of_subset += this_language_population
+#
+#         country_obj['useful_count'] = total_size_of_subset
+#         country_obj['useful_languages'] = subset_of_language_data
+#
+#         if(total_size_of_subset > 0):
+#             useful_languages = country_obj['useful_languages'].keys()
+#             for u_language in useful_languages:
+#                 country_obj['useful_languages'][u_language] = round(((country_obj['useful_languages'][u_language]/total_size_of_subset) * 100),2)
+#
+#     useful_youtube_population = sum(c['useful_count'] for c in countries)           # youtube population that speaks only relevant languages (but, this is > total subs count)
+#     # print useful_youtube_population
+#
+#     temp_copy = copy.deepcopy(countries)                                            # so....scaling it down....
+#     useful_scaled_down = map(lambda x: changeDictValue(x,'useful_count', round((x['useful_count'] * (total_votes_million/useful_youtube_population)),2) ), temp_copy)
+#
+#     # printCountryWiseDistribution(useful_scaled_down)
+#     print "Useful population: " + str(sum(c['useful_count'] for c in useful_scaled_down))                        # should be = total subs count
+#     return useful_scaled_down
 
-    for country_obj in countries:
-        country_languages = country_obj['languages'].keys()
+def shapeCountryPopulationDataAccordingToLanguages_Attempt2(channels, countries):
+    language_data = {}
+    for channel in channels:
+        if(channel['language'] in language_data):
+            language_data[channel['language']]['subs'] += round(channel['subs'] * pow(10,-6),2)
+        else:
+            language_data[channel['language']] = {'subs': round(channel['subs'] * pow(10,-6),2)}
+
+    all_languages = language_data.keys()
+    for lang in all_languages:
+        language_data[lang]['population'] = round(sum(map(lambda country: ((country['count'] * country['languages'][lang]) / 100), countries)),2)
+    # print language_data
+
+    countries_copy = copy.deepcopy(countries)
+
+    for country_obj in countries_copy:
         subset_of_language_data = {}
         total_size_of_subset = 0
-        for language in country_languages:
-            this_language_population = round((country_obj['count'] * (country_obj['languages'][language]) / 100),2)
+        for language in all_languages:
+            this_language_population = round((((country_obj['count'] * country_obj['languages'][language]) / 100) * (language_data[language]['subs']/language_data[language]['population']) ),2)
             subset_of_language_data[language] = this_language_population
             total_size_of_subset += this_language_population
 
-        country_obj['useful_count'] = total_size_of_subset
+        country_obj['useful_count'] = round(total_size_of_subset,2)
         country_obj['useful_languages'] = subset_of_language_data
 
-        if(total_size_of_subset > 0):
-            useful_languages = country_obj['useful_languages'].keys()
-            for u_language in useful_languages:
-                country_obj['useful_languages'][u_language] = round(((country_obj['useful_languages'][u_language]/total_size_of_subset) * 100),2)
+    # printCountryWiseDistribution(countries_copy)
+    print "Useful population: " + str(sum(c['useful_count'] for c in countries_copy))
+    return countries_copy
 
-    useful_youtube_population = sum(c['useful_count'] for c in countries)           # youtube population that speaks only relevant languages (but, this is > total subs count)
-    # print useful_youtube_population
-
-    temp_copy = copy.deepcopy(countries)                                            # so....scaling it down....
-    useful_scaled_down = map(lambda x: changeDictValue(x,'useful_count', round((x['useful_count'] * (total_votes_million/useful_youtube_population)),2) ), temp_copy)
-
-    # printCountryWiseDistribution(useful_scaled_down)
-    print "Useful population: " + str(sum(c['useful_count'] for c in useful_scaled_down))                        # should be = total subs count
-    return useful_scaled_down
 
 total_monthly_2016_top_15_countries = [
     # Language data (in percentages) from: (default source for EN: https://en.wikipedia.org/wiki/List_of_countries_by_English-speaking_population, for PR: https://en.wikipedia.org/wiki/Geographical_distribution_of_Portuguese_speakers)
@@ -670,12 +717,13 @@ for channel_obj in channels:
 # temp_copy = copy.deepcopy(total_monthly_2016_top_15_countries)
 # scaled_down_total_monthly_2016_top_15_countries = map(lambda x: changeDictValue(x,'count', round((x['count'] * (total_votes_million/total_youtube_population)),2) ), temp_copy)
 
-useful_country_data = shapeCountryPopulationDataAccordingToLanguages(total_monthly_2016_top_15_countries)
+# useful_country_data = shapeCountryPopulationDataAccordingToLanguages_Attempt1(total_monthly_2016_top_15_countries)
+useful_country_data = shapeCountryPopulationDataAccordingToLanguages_Attempt2(channels,total_monthly_2016_top_15_countries)
 
 votes_distribution_fptp(channels, useful_country_data)
-# winner_fptp(channels, useful_country_data)
+winner_fptp(channels, useful_country_data)
 votes_distribution_ranked_voting(channels, useful_country_data)
 # printChannelVotes(channels)
-# winner_irv(channels,useful_country_data)
-# winner_ranked_borda_count(channels, useful_country_data)
+winner_irv(channels,useful_country_data)
+winner_ranked_borda_count(channels, useful_country_data)
 winner_ranked_condorcet(channels,useful_country_data)
