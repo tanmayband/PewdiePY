@@ -523,8 +523,11 @@ def votes_distribution_exclusive(channels,country_data_to_use):
 
 
 def winner_approval_rating(all_channels,all_countries):
-    print "// constructing voter population..."
-    votes_distribution_exclusive(all_channels,all_countries)
+    # print "// constructing voter population..."
+    # votes_distribution_exclusive(all_channels,all_countries)
+
+    # printChannelVotes(all_channels)
+    # printCountryWiseDistribution(all_countries)
 
     print "\n------------- INITIATING APPROVAL VOTING -------------\n"
     results = {}
@@ -538,12 +541,13 @@ def winner_approval_rating(all_channels,all_countries):
         max_votes_in_this_country = 0
         winner = {}
 
-        total_votes_in_country = country_obj['voting_population']
+        total_votes_in_country = country_obj['useful_count']
         for channel_obj in all_channels:
             this_channel_base_votes_in_this_country = getChannelCountryDict(channel_obj,this_country)['count']
-            difference_to_total = total_votes_in_country - this_channel_base_votes_in_this_country
+            # print "    " + str(channel_obj['name']) + ": " + str(this_channel_base_votes_in_this_country)
+            # difference_to_total = total_votes_in_country - this_channel_base_votes_in_this_country
 
-            this_channel_actual_votes_in_this_country = this_channel_base_votes_in_this_country + random.uniform(-difference_to_total,difference_to_total)
+            this_channel_actual_votes_in_this_country = round(random.uniform(this_channel_base_votes_in_this_country,total_votes_in_country),2)
             # print "    " + str(channel_obj['name']) + ": " + str(this_channel_actual_votes_in_this_country)
 
             if(this_channel_actual_votes_in_this_country > max_votes_in_this_country):
@@ -560,6 +564,70 @@ def winner_approval_rating(all_channels,all_countries):
     print "\n"
     print max(results.iterkeys(), key=lambda x: results[x]) + " forms government!"
     print "\n"
+
+def distribute_score_votes(channel,country,votes):
+    if votes:
+        channel_country_obj = getChannelCountryDict(channel,country)
+        total_ranks = (channel['distribution'][0]['ranks']).keys()
+        new_ranks_obj = {r: 0 for r in total_ranks}
+        total_votes = votes
+        score = 0
+        # giving channel's country subs as minimum 1 ranks.
+        new_ranks_obj[(len(total_ranks))] = channel_country_obj['count']
+        total_votes -= channel_country_obj['count']
+        random.shuffle(total_ranks)
+        for rank in total_ranks:
+            if(rank == total_ranks[-1]):
+                new_ranks_obj[rank] = round((new_ranks_obj[rank] + total_votes),2)
+                score += (rank * new_ranks_obj[rank])
+            else:
+                new_votes = round(random.uniform(0,total_votes),2)
+                new_ranks_obj[rank] = round((new_ranks_obj[rank] + new_votes),2)
+                score += (rank * new_ranks_obj[rank])
+                total_votes -= new_votes
+
+        channel_country_obj['ranks'] = new_ranks_obj
+        # print channel_country_obj
+        return round((score/votes),2)
+    return 0
+
+
+def winner_score_voting(channels, countries):
+    # printChannelVotes(channels)
+    # printCountryWiseDistribution(countries)
+    print "\n------------- INITIATING SCORE VOTING -------------\n"
+    results = {}
+    for channel_obj in channels:
+        results[channel_obj['name']] = 0
+
+    channels_copied = copy.deepcopy(channels)
+    total_channels = len(channels_copied)
+
+    for country_obj in countries:
+        this_country = country_obj['country']
+        print "___ ___ ___ ___ ___ ___"
+        print this_country
+        max_average = 0
+        winner = {}
+
+        for channel_obj in channels:
+            # print "     " + str(channel_obj['name'])
+            rating = distribute_score_votes(channel_obj,this_country,country_obj['useful_count'])
+            # print "       " + str(rating)
+            if rating > max_average:
+                max_average = rating
+                winner = channel_obj
+
+        if(winner):
+                print "Winner " + str(this_country) + ": " + str(winner['name'])
+                results[winner['name']] += 1
+
+    print "\nSeats distribution for " + str(len(countries)) + " seats (countries):"
+    print sorted(results.items(), key=itemgetter(1), reverse = True)
+    print "\n"
+    print max(results.iterkeys(), key=lambda x: results[x]) + " forms government!"
+    print "\n"
+
 
 
 # def shapeCountryPopulationDataAccordingToLanguages_Attempt1(countries):
@@ -721,9 +789,11 @@ for channel_obj in channels:
 useful_country_data = shapeCountryPopulationDataAccordingToLanguages_Attempt2(channels,total_monthly_2016_top_15_countries)
 
 votes_distribution_fptp(channels, useful_country_data)
-winner_fptp(channels, useful_country_data)
+# winner_fptp(channels, useful_country_data)
 votes_distribution_ranked_voting(channels, useful_country_data)
 # printChannelVotes(channels)
-winner_irv(channels,useful_country_data)
-winner_ranked_borda_count(channels, useful_country_data)
-winner_ranked_condorcet(channels,useful_country_data)
+# winner_irv(channels,useful_country_data)
+# winner_ranked_borda_count(channels, useful_country_data)
+# winner_ranked_condorcet(channels,useful_country_data)
+# winner_approval_rating(channels,useful_country_data)
+winner_score_voting(channels,useful_country_data)
